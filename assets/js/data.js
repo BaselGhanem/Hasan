@@ -1,11 +1,8 @@
 /**
  * data.js — دار الدواء Analytics
  * مسؤول عن: قراءة Excel، معالجة البيانات، الفلترة
- * 
- * هيكل ملف Excel المتوقع (أعمدة الشيت الأول):
- * المندوب | الفريق | المنطقة | التخصص | الصنف | التاريخ | القيمة | الكمية | الزيارات | الهدف
- * 
- * يمكن تعديل COLUMN_MAP لمطابقة أسماء أعمدة ملفك الفعلي
+ * * تم التعديل لدعم قراءة البيانات من عدة صفحات (Sheets) داخل نفس الملف.
+ * (المبيعات، الأهداف، والزيارات في صفحات منفصلة)
  */
 
 const COLUMN_MAP = {
@@ -14,7 +11,7 @@ const COLUMN_MAP = {
   area:      ['المنطقة', 'Area', 'area', 'منطقة'],
   specialty: ['التخصص', 'Specialty', 'specialty', 'تخصص'],
   item:      ['الصنف', 'Item', 'item', 'صنف', 'المنتج', 'Product'],
-  date:      ['التاريخ', 'Date', 'date', 'تاريخ'],
+  date:      ['التاريخ', 'Date', 'date', 'تاريخ', 'الشهر', 'اليوم'],
   value:     ['القيمة', 'Value', 'value', 'المبيعات', 'Sales'],
   qty:       ['الكمية', 'Qty', 'qty', 'كمية', 'Quantity'],
   visits:    ['الزيارات', 'Visits', 'visits', 'زيارات'],
@@ -35,9 +32,7 @@ function parseExcelFile(file) {
     reader.onload = (e) => {
       try {
         const wb = XLSX.read(e.target.result, { type: 'binary', cellDates: true });
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-        const rows = normalizeRows(json);
+        const rows = processAllSheets(wb);
         resolve(rows);
       } catch (err) {
         reject(err);
@@ -56,9 +51,28 @@ async function fetchExcelFromUrl(url) {
   if (!res.ok) throw new Error(`فشل التحميل: ${res.status}`);
   const buffer = await res.arrayBuffer();
   const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-  return normalizeRows(json);
+  return processAllSheets(wb);
+}
+
+// ============================================================
+// دمج جميع الصفحات (المبيعات، الزيارات، الأهداف) في مصفوفة واحدة
+// ============================================================
+function processAllSheets(wb) {
+  let allRows = [];
+  
+  wb.SheetNames.forEach(sheetName => {
+    const sheet = wb.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    if (json.length > 0) {
+      allRows = allRows.concat(normalizeRows(json));
+    }
+  });
+
+  // إعادة ترقيم المعرفات بعد الدمج
+  return allRows.map((r, i) => { 
+    r.id = i; 
+    return r; 
+  });
 }
 
 // ============================================================
@@ -68,7 +82,7 @@ function normalizeRows(rows) {
   if (!rows.length) return [];
   const headers = Object.keys(rows[0]);
 
-  // اكتشاف أسماء الأعمدة تلقائياً
+  // اكتشاف أسماء الأعمدة تلقائياً لكل صفحة
   const map = {};
   for (const [key, aliases] of Object.entries(COLUMN_MAP)) {
     for (const alias of aliases) {
@@ -77,8 +91,7 @@ function normalizeRows(rows) {
     }
   }
 
-  return rows.map((row, i) => ({
-    id:        i,
+  return rows.map((row) => ({
     rep:       str(row[map.rep]),
     team:      str(row[map.team]),
     area:      str(row[map.area]),
@@ -180,9 +193,15 @@ function computeRepTable(data) {
   data.forEach(row => {
     const k = row.rep || '—';
     if (!reps[k]) reps[k] = { rep: k, team: row.team, area: row.area, specialty: row.specialty, visits: 0, value: 0, target: 0 };
+    
     reps[k].visits += row.visits;
     reps[k].value  += row.value;
     reps[k].target += row.target;
+    
+    // الاحتفاظ بالفريق والمنطقة إذا كانت موجودة في أحد الصفوف وغير موجودة في البقية
+    if (!reps[k].team && row.team) reps[k].team = row.team;
+    if (!reps[k].area && row.area) reps[k].area = row.area;
+    if (!reps[k].specialty && row.specialty) reps[k].specialty = row.specialty;
   });
   return Object.values(reps).sort((a, b) => b.value - a.value);
 }
