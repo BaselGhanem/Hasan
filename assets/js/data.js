@@ -15,9 +15,10 @@ const COLUMN_MAP = {
   value:     ['القيمة', 'Value', 'value', 'المبيعات', 'Sales'],
   qty:       ['الكمية', 'Qty', 'qty', 'كمية', 'Quantity'],
   visits:    ['الزيارات', 'Visits', 'visits', 'زيارات'],
-  target:    ['الهدف', 'Target', 'target', 'هدف'],
+  // التعديل هنا 👇
+  target:    ['الهدف', 'Target', 'target', 'الهدف بالقيمة', 'الهدف (قيمة)', 'الهدف قيمة'],
+  targetQty: ['الهدف بالكمية', 'Target Qty', 'الهدف كمية', 'الهدف (كمية)'],
 };
-
 // البيانات الخام وبعد الفلترة
 let RAW_DATA = [];
 let FILTERED_DATA = [];
@@ -78,19 +79,20 @@ function processAllSheets(wb) {
 // ============================================================
 // تطبيع الصفوف — تحويل أسماء الأعمدة إلى مفاتيح موحدة
 // ============================================================
-function normalizeRows(rows) {
-  if (!rows.length) return [];
-  const headers = Object.keys(rows[0]);
-
-  // اكتشاف أسماء الأعمدة تلقائياً لكل صفحة
-  const map = {};
-  for (const [key, aliases] of Object.entries(COLUMN_MAP)) {
-    for (const alias of aliases) {
-      const found = headers.find(h => h.trim() === alias.trim());
-      if (found) { map[key] = found; break; }
-    }
-  }
-
+// داخل دالة normalizeRows
+  return rows.map((row) => ({
+    rep:       str(row[map.rep]),
+    team:      str(row[map.team]),
+    area:      str(row[map.area]),
+    specialty: str(row[map.specialty]),
+    item:      str(row[map.item]),
+    date:      parseDate(row[map.date]),
+    value:     num(row[map.value]),
+    qty:       num(row[map.qty]),
+    visits:    num(row[map.visits]),
+    target:    num(row[map.target]),
+    targetQty: num(row[map.targetQty]), // 👈 إضافة هذا السطر
+  })).filter(r => r.rep || r.team || r.area || r.item); // 👈 تعديل هذا السطر لعدم تجاهل أهداف المناطق/الأصناف
   return rows.map((row) => ({
     rep:       str(row[map.rep]),
     team:      str(row[map.team]),
@@ -129,18 +131,26 @@ function computeKPIs(data) {
   const totalValue   = data.reduce((s, r) => s + r.value, 0);
   const totalQty     = data.reduce((s, r) => s + r.qty, 0);
   const totalVisits  = data.reduce((s, r) => s + r.visits, 0);
-  const totalTarget  = data.reduce((s, r) => s + r.target, 0);
+  
+  // حساب الهدفين
+  const totalTarget    = data.reduce((s, r) => s + r.target, 0);
+  const totalTargetQty = data.reduce((s, r) => s + r.targetQty, 0);
+  
   const reps         = unique(data.map(r => r.rep)).filter(Boolean);
   const avgSales     = reps.length ? totalValue / reps.length : 0;
-  const targetPct    = totalTarget ? Math.min((totalValue / totalTarget) * 100, 150) : 0;
+  
+  // تحديد النسبة بناءً على وضع العرض الحالي (قيمة أو كمية)
+  let currentTarget = DISPLAY_MODE === 'qty' ? totalTargetQty : totalTarget;
+  let currentActual = DISPLAY_MODE === 'qty' ? totalQty : totalValue;
+  
+  const targetPct = currentTarget ? Math.min((currentActual / currentTarget) * 100, 150) : 0;
 
   return {
-    totalValue, totalQty, totalVisits, totalTarget,
+    totalValue, totalQty, totalVisits, totalTarget, totalTargetQty,
     repCount: reps.length,
     avgSales, targetPct,
   };
 }
-
 // ============================================================
 // بيانات الرسم البياني الشهري
 // ============================================================
