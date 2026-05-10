@@ -152,12 +152,11 @@ function resetFilters() {
 // الرسوم البيانية (Charts)
 // ============================================================
 function initCharts() {
-  const isDark = !document.body.classList.contains('light');
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const textColor = isDark ? '#8b949e' : '#4a5568';
+  // تسجيل الملحق عالمياً
+  Chart.register(ChartDataLabels);
 
-  Chart.defaults.color = textColor;
-  Chart.defaults.font.family = 'Almarai';
+  const isDark = !document.body.classList.contains('light');
+  const textColor = isDark ? '#8b949e' : '#4a5568';
 
   const salesCtx = document.getElementById('salesChart')?.getContext('2d');
   if (salesCtx) {
@@ -165,16 +164,31 @@ function initCharts() {
       type: 'bar',
       data: { labels: [], datasets: [] },
       options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          // إعدادات ملصقات البيانات
+          datalabels: {
+            anchor: 'end',
+            align: 'top',
+            color: textColor,
+            font: { weight: 'bold', family: 'Almarai' },
+            formatter: (value) => formatNum(value)
+          }
+        },
         scales: {
-          x: { grid: { color: gridColor } },
-          y: { grid: { color: gridColor }, ticks: { callback: v => formatNum(v) } }
+          y: { 
+            beginAtZero: true,
+            ticks: { callback: v => formatNum(v) } 
+          }
         }
       }
     });
   }
-
+  
+  // قم بعمل نفس الشيء لمخطط الفرق (teamsChart) مع تغيير الموقع ليكون 'center'
+}
   const teamsCtx = document.getElementById('teamsChart')?.getContext('2d');
   if (teamsCtx) {
     teamsChartInst = new Chart(teamsCtx, {
