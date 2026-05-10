@@ -7,13 +7,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/styles.css" />
+  <style>
+    .tabs-nav { display: flex; gap: 10px; margin: 20px 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    .tab-btn { padding: 10px 25px; border: none; background: #f0f0f0; cursor: pointer; font-family: 'Almarai'; font-weight: bold; border-radius: 8px; transition: 0.3s; }
+    .tab-btn.active { background: #004a99; color: white; }
+    .view-content { display: none; }
+    .view-content.active { display: block; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <div class="app-container">
 
-    <!-- HEADER -->
     <header class="header">
       <div class="header-logo">
         <div class="logo-icon">⚕</div>
@@ -22,38 +29,26 @@
           <span class="logo-sub">Analytics 2026</span>
         </div>
       </div>
-
       <div class="header-controls">
-        <!-- Excel Upload -->
         <label class="upload-btn" for="excelFile" title="رفع ملف Excel">
           <span class="upload-icon">📂</span>
           <span>رفع ملف Excel</span>
           <input type="file" id="excelFile" accept=".xlsx,.xls" hidden />
         </label>
-
-        <!-- GitHub Sync Button -->
-        <button class="github-btn" id="githubSyncBtn" title="مزامنة GitHub">
-          <span>⇄</span> GitHub Sync
-        </button>
-
-        <!-- Value / Qty Toggle -->
+        <button class="github-btn" id="githubSyncBtn"><span>⇄</span> GitHub Sync</button>
         <div class="toggle-group">
           <button class="toggle-btn active" id="toggleValue">القيمة</button>
           <button class="toggle-btn" id="toggleQty">الكمية</button>
         </div>
-
-        <!-- Dark Mode -->
-        <button class="icon-btn" id="darkModeBtn" title="الوضع الليلي">🌙</button>
+        <button class="icon-btn" id="darkModeBtn">🌙</button>
       </div>
     </header>
 
-    <!-- STATUS BAR -->
     <div class="status-bar" id="statusBar">
-      <span id="statusText">⬆ ارفع ملف Excel أو اربط مصدر GitHub لبدء التحليل</span>
+      <span id="statusText">⬆ ارفع ملف Excel لبدء التحليل الذكي</span>
       <span id="lastUpdate"></span>
     </div>
 
-    <!-- FILTERS -->
     <section class="filters-bar">
       <div class="filter-group">
         <label>الفريق</label>
@@ -62,10 +57,6 @@
       <div class="filter-group">
         <label>المنطقة</label>
         <select id="filterArea"><option value="">جميع المناطق</option></select>
-      </div>
-      <div class="filter-group">
-        <label>التخصص</label>
-        <select id="filterSpecialty"><option value="">جميع التخصصات</option></select>
       </div>
       <div class="filter-group">
         <label>المندوب</label>
@@ -86,81 +77,69 @@
       <button class="reset-btn" id="resetFilters">↺ إعادة تعيين</button>
     </section>
 
-    <!-- KPI CARDS -->
-    <section class="kpi-container" id="kpiContainer">
-      <div class="kpi-card" id="kpi-sales">
-        <div class="kpi-icon">💰</div>
-        <div class="kpi-body">
-          <div class="kpi-label">إجمالي المبيعات</div>
-          <div class="kpi-value" id="kpiTotalSales">-</div>
-          <div class="kpi-trend" id="kpiSalesTrend"></div>
-        </div>
-      </div>
-      <div class="kpi-card" id="kpi-visits">
-        <div class="kpi-icon">🗂</div>
-        <div class="kpi-body">
-          <div class="kpi-label">إجمالي الزيارات</div>
-          <div class="kpi-value" id="kpiTotalVisits">-</div>
-          <div class="kpi-trend" id="kpiVisitsTrend"></div>
-        </div>
-      </div>
-      <div class="kpi-card" id="kpi-reps">
-        <div class="kpi-icon">👤</div>
-        <div class="kpi-body">
-          <div class="kpi-label">عدد المندوبين</div>
-          <div class="kpi-value" id="kpiReps">-</div>
-        </div>
-      </div>
-      <div class="kpi-card" id="kpi-avg">
-        <div class="kpi-icon">📈</div>
-        <div class="kpi-body">
-          <div class="kpi-label">متوسط مبيعات المندوب</div>
-          <div class="kpi-value" id="kpiAvgSales">-</div>
-        </div>
-      </div>
-      <div class="kpi-card" id="kpi-target">
-        <div class="kpi-icon">🎯</div>
-        <div class="kpi-body">
-          <div class="kpi-label">نسبة تحقيق الهدف</div>
-          <div class="kpi-value" id="kpiTarget">-</div>
-          <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiProgressBar"></div></div>
-        </div>
-      </div>
-    </section>
+    <nav class="tabs-nav">
+      <button class="tab-btn active" onclick="switchView('sales-view', this)">📊 لوحة المبيعات</button>
+      <button class="tab-btn" onclick="switchView('visits-view', this)">🚗 متابعة الزيارات</button>
+    </nav>
 
-    <!-- CHARTS -->
-    <section class="charts-section">
-      <div class="chart-card">
-        <div class="chart-header">
+    <div id="sales-view" class="view-content active">
+      <section class="kpi-container">
+        <div class="kpi-card">
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-body">
+            <div class="kpi-label">إجمالي المبيعات</div>
+            <div class="kpi-value" id="kpiTotalSales">-</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-body">
+            <div class="kpi-label">نسبة تحقيق الهدف</div>
+            <div class="kpi-value" id="kpiTarget">-</div>
+            <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiProgressBar"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="charts-section">
+        <div class="chart-card">
           <h3>تحليل المبيعات الشهري</h3>
-          <div class="chart-legend" id="salesLegend"></div>
+          <canvas id="salesChart"></canvas>
         </div>
-        <canvas id="salesChart"></canvas>
-      </div>
-      <div class="chart-card">
-        <div class="chart-header">
+        <div class="chart-card">
           <h3>مساهمة الفرق</h3>
+          <canvas id="teamsChart"></canvas>
         </div>
-        <canvas id="teamsChart"></canvas>
-      </div>
-    </section>
-
-    <!-- BOTTOM SECTION -->
-    <section class="bottom-section">
-
-      <!-- SWOT / Executive Insights -->
+      </section>
+      
       <div class="insight-card">
-        <h3 class="card-title">رؤى الإدارة العليا</h3>
-        <ul class="swot-list" id="swotList">
-          <li class="swot-empty">ارفع ملف بيانات لعرض التحليل الاستراتيجي</li>
-        </ul>
+        <h3 class="card-title">رؤى الإدارة (SWOT)</h3>
+        <ul class="swot-list" id="swotList"></ul>
       </div>
+    </div>
 
-      <!-- Visits Table -->
+    <div id="visits-view" class="view-content">
+      <section class="kpi-container">
+        <div class="kpi-card">
+          <div class="kpi-icon">🗂</div>
+          <div class="kpi-body">
+            <div class="kpi-label">إجمالي الزيارات</div>
+            <div class="kpi-value" id="kpiTotalVisits">-</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">👤</div>
+          <div class="kpi-body">
+            <div class="kpi-label">تغطية المندوبين</div>
+            <div class="kpi-value" id="kpiReps">-</div>
+          </div>
+        </div>
+      </section>
+
       <div class="table-card">
         <div class="table-header">
-          <h3 class="card-title">إدارة الزيارات الميدانية</h3>
-          <input type="text" id="tableSearch" placeholder="🔍 بحث في الجدول..." class="table-search" />
+          <h3 class="card-title">تفاصيل الزيارات الميدانية والتخصصات</h3>
+          <input type="text" id="tableSearch" placeholder="🔍 بحث عن مندوب أو تخصص..." class="table-search" />
         </div>
         <div class="table-wrapper">
           <table id="visitsTable">
@@ -170,42 +149,30 @@
                 <th>الفريق</th>
                 <th>المنطقة</th>
                 <th>التخصص</th>
-                <th>إجمالي الزيارات</th>
+                <th>الزيارات</th>
                 <th>المبيعات</th>
                 <th>الأداء</th>
               </tr>
             </thead>
-            <tbody id="visitsTableBody">
-              <tr><td colspan="7" class="table-empty">لا توجد بيانات - ارفع ملف Excel للبدء</td></tr>
-            </tbody>
+            <tbody id="visitsTableBody"></tbody>
           </table>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- GITHUB MODAL -->
-    <div class="modal-overlay" id="githubModal">
-      <div class="modal">
-        <h3>🔗 ربط مصدر GitHub</h3>
-        <p>أدخل رابط ملف Excel الخام من GitHub (raw URL)</p>
-        <input type="url" id="githubUrl" placeholder="https://raw.githubusercontent.com/user/repo/main/data.xlsx" />
-        <div class="modal-actions">
-          <button class="btn-primary" id="loadGithubBtn">تحميل</button>
-          <button class="btn-secondary" id="closeModalBtn">إلغاء</button>
-        </div>
-        <div class="modal-hint">
-          💡 <strong>كيف تحصل على الرابط؟</strong><br/>
-          افتح ملف Excel في GitHub → اضغط "Raw" → انسخ الرابط من شريط العنوان
         </div>
       </div>
     </div>
 
     <footer class="footer">
-      دار الدواء © 2026 - منصة التحليلات التنفيذية | تم التطوير بواسطة Basel Ghanem
+      دار الدواء © 2026 | تم التطوير بواسطة Basel Ghanem
     </footer>
-
   </div>
+
+  <script>
+    function switchView(viewId, btn) {
+      document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
 
   <script src="assets/js/data.js"></script>
   <script src="assets/js/app.js"></script>
