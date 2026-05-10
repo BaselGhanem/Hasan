@@ -3,48 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>دار الدواء - منصة التحليلات 2026</title>
+  <title>دار الدواء - منصة التحليلات التنفيذية 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/styles.css" />
   <style>
-    .tabs-nav { display: flex; gap: 10px; margin: 20px 0; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-    .tab-btn { padding: 12px 25px; border: none; background: #f0f0f0; cursor: pointer; font-family: 'Almarai'; font-weight: bold; border-radius: 8px; transition: 0.3s; }
+    .tabs-nav { display: flex; gap: 10px; margin: 20px 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    .tab-btn { padding: 10px 25px; border: none; background: #f0f0f0; cursor: pointer; font-family: 'Almarai'; font-weight: bold; border-radius: 8px; transition: 0.3s; }
     .tab-btn.active { background: #004a99; color: white; }
     .view-content { display: none; }
-    .view-content.active { display: block; animation: fadeIn 0.4s; }
+    .view-content.active { display: block; animation: fadeIn 0.5s; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
 </head>
 <body class="light">
   <div class="app-container">
+
     <header class="header">
       <div class="header-logo">
         <div class="logo-icon">⚕</div>
-        <div class="logo-text"><span class="logo-main">دار الدواء</span><span class="logo-sub">Analytics 2026</span></div>
+        <div class="logo-text">
+          <span class="logo-main">دار الدواء</span>
+          <span class="logo-sub">Analytics 2026</span>
+        </div>
       </div>
       <div class="header-controls">
-        <label class="upload-btn" for="excelFile">📂 <span>رفع ملف Excel</span><input type="file" id="excelFile" accept=".xlsx,.xls" hidden /></label>
+        <label class="upload-btn" for="excelFile" title="رفع ملف Excel">
+          <span class="upload-icon">📂</span>
+          <span>رفع ملف Excel</span>
+          <input type="file" id="excelFile" accept=".xlsx,.xls" hidden />
+        </label>
+        <button class="github-btn" id="githubSyncBtn"><span>⇄</span> GitHub Sync</button>
         <div class="toggle-group">
           <button class="toggle-btn active" id="toggleValue">القيمة</button>
           <button class="toggle-btn" id="toggleQty">الكمية</button>
         </div>
-        <button class="icon-btn" id="darkModeBtn">🌙</button>
+<button class="icon-btn" id="darkModeBtn" title="الوضع الليلي">🌙</button>
       </div>
     </header>
 
-    <div class="status-bar" id="statusBar"><span id="statusText">⬆ ارفع ملف البيانات للبدء</span></div>
+    <div class="status-bar" id="statusBar">
+      <span id="statusText">⬆ ارفع ملف Excel لبدء التحليل الذكي</span>
+      <span id="lastUpdate"></span>
+    </div>
 
     <section class="filters-bar">
-      <div class="filter-group"><label>الفريق</label><select id="filterTeam"><option value="">جميع الفرق</option></select></div>
-      <div class="filter-group"><label>المنطقة</label><select id="filterArea"><option value="">جميع المناطق</option></select></div>
-      <div class="filter-group"><label>المندوب</label><select id="filterRep"><option value="">جميع المندوبين</option></select></div>
-      <div class="filter-group"><label>الصنف</label><select id="filterItem"><option value="">جميع الأصناف</option></select></div>
-      <div class="filter-group"><label>من</label><input type="date" id="dateFrom" value="2026-01-01" /></div>
-      <div class="filter-group"><label>إلى</label><input type="date" id="dateTo" value="2026-12-31" /></div>
-      <button class="reset-btn" id="resetFilters">↺</button>
+      <div class="filter-group">
+        <label>الفريق</label>
+        <select id="filterTeam"><option value="">جميع الفرق</option></select>
+      </div>
+      <div class="filter-group">
+        <label>المنطقة</label>
+        <select id="filterArea"><option value="">جميع المناطق</option></select>
+      </div>
+      <div class="filter-group">
+        <label>المندوب</label>
+        <select id="filterRep"><option value="">جميع المندوبين</option></select>
+      </div>
+      <div class="filter-group">
+        <label>الصنف</label>
+        <select id="filterItem"><option value="">جميع الأصناف</option></select>
+      </div>
+      <div class="filter-group">
+        <label>من تاريخ</label>
+        <input type="date" id="dateFrom" value="2026-01-01" />
+      </div>
+      <div class="filter-group">
+        <label>إلى تاريخ</label>
+        <input type="date" id="dateTo" value="2026-12-31" />
+      </div>
+      <button class="reset-btn" id="resetFilters">↺ إعادة تعيين</button>
     </section>
 
     <nav class="tabs-nav">
@@ -54,45 +86,96 @@
 
     <div id="sales-view" class="view-content active">
       <section class="kpi-container">
-        <div class="kpi-card"><div class="kpi-label">إجمالي المبيعات</div><div class="kpi-value" id="kpiTotalSales">-</div></div>
         <div class="kpi-card">
-          <div class="kpi-label">تحقيق الهدف</div>
-          <div class="kpi-value" id="kpiTarget">-</div>
-          <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiProgressBar"></div></div>
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-body">
+            <div class="kpi-label">إجمالي المبيعات</div>
+            <div class="kpi-value" id="kpiTotalSales">-</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-body">
+            <div class="kpi-label">نسبة تحقيق الهدف</div>
+            <div class="kpi-value" id="kpiTarget">-</div>
+            <div class="kpi-progress"><div class="kpi-progress-bar" id="kpiProgressBar"></div></div>
+          </div>
         </div>
       </section>
+
       <section class="charts-section">
-        <div class="chart-card"><h3>التحليل الشهري</h3><canvas id="salesChart"></canvas></div>
-        <div class="chart-card"><h3>مساهمة الفرق</h3><canvas id="teamsChart"></canvas></div>
+        <div class="chart-card">
+          <h3>تحليل المبيعات الشهري</h3>
+          <canvas id="salesChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>مساهمة الفرق</h3>
+          <canvas id="teamsChart"></canvas>
+        </div>
       </section>
-      <div class="insight-card"><h3>رؤى الإدارة</h3><ul class="swot-list" id="swotList"></ul></div>
+      
+      <div class="insight-card">
+        <h3 class="card-title">رؤى الإدارة (SWOT)</h3>
+        <ul class="swot-list" id="swotList"></ul>
+      </div>
     </div>
 
     <div id="visits-view" class="view-content">
       <section class="kpi-container">
-        <div class="kpi-card"><div class="kpi-label">إجمالي الزيارات</div><div class="kpi-value" id="kpiTotalVisits">-</div></div>
-        <div class="kpi-card"><div class="kpi-label">عدد المناديب</div><div class="kpi-value" id="kpiReps">-</div></div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🗂</div>
+          <div class="kpi-body">
+            <div class="kpi-label">إجمالي الزيارات</div>
+            <div class="kpi-value" id="kpiTotalVisits">-</div>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">👤</div>
+          <div class="kpi-body">
+            <div class="kpi-label">تغطية المندوبين</div>
+            <div class="kpi-value" id="kpiReps">-</div>
+          </div>
+        </div>
       </section>
+
       <div class="table-card">
-        <div class="table-header"><input type="text" id="tableSearch" placeholder="🔍 بحث سريع في الجدول..." class="table-search" /></div>
+        <div class="table-header">
+          <h3 class="card-title">تفاصيل الزيارات الميدانية والتخصصات</h3>
+          <input type="text" id="tableSearch" placeholder="🔍 بحث عن مندوب أو تخصص..." class="table-search" />
+        </div>
         <div class="table-wrapper">
-          <table>
-            <thead><tr><th>المندوب</th><th>الفريق</th><th>المنطقة</th><th>التخصص</th><th>الزيارات</th><th>المبيعات</th><th>الأداء</th></tr></thead>
+          <table id="visitsTable">
+            <thead>
+              <tr>
+                <th>المندوب</th>
+                <th>الفريق</th>
+                <th>المنطقة</th>
+                <th>التخصص</th>
+                <th>الزيارات</th>
+                <th>المبيعات</th>
+                <th>الأداء</th>
+              </tr>
+            </thead>
             <tbody id="visitsTableBody"></tbody>
           </table>
         </div>
       </div>
     </div>
+
+    <footer class="footer">
+      دار الدواء © 2026 | تم التطوير بواسطة Basel Ghanem
+    </footer>
   </div>
 
   <script>
-    function switchView(id, btn) {
+    function switchView(viewId, btn) {
       document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
+      document.getElementById(viewId).classList.add('active');
       btn.classList.add('active');
     }
   </script>
+
   <script src="assets/js/data.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
