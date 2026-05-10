@@ -178,3 +178,39 @@ function extractFilterOptions(data) {
         items: unique(data.map(r => r.item)).filter(Boolean).sort(),
     };
 }
+// ============================================================
+// توليد رؤى SWOT تلقائية (Executive Insights)
+// ============================================================
+function generateInsights(kpis, teamsData) {
+  const insights = [];
+
+  // 1. تحليل نسبة تحقيق الهدف
+  if (kpis.targetPct >= 90)
+    insights.push({ type: 'strength', text: `✅ تحقيق ${kpis.targetPct.toFixed(1)}% من الهدف — أداء ممتاز ومستقر` });
+  else if (kpis.targetPct >= 70)
+    insights.push({ type: 'warning', text: `⚠ تحقيق ${kpis.targetPct.toFixed(1)}% من الهدف — الأداء يحتاج إلى دفعة بسيطة` });
+  else if (kpis.targetPct > 0)
+    insights.push({ type: 'weakness', text: `🔴 تحقيق ${kpis.targetPct.toFixed(1)}% فقط — أداء دون المستوى المطلوب، يتطلب تدخل إداري` });
+
+  // 2. تحليل الكثافة الميدانية (الزيارات)
+  if (kpis.repCount > 0) {
+    const avgVisits = kpis.totalVisits / kpis.repCount;
+    if (avgVisits > 20)
+      insights.push({ type: 'strength', text: `📋 معدل ${avgVisits.toFixed(0)} زيارة لكل مندوب — تغطية ميدانية قوية جداً` });
+    else if (avgVisits > 0 && avgVisits <= 10)
+      insights.push({ type: 'opportunity', text: `📋 معدل الزيارات (${avgVisits.toFixed(0)}) منخفض — فرصة لزيادة الكثافة الميدانية` });
+  }
+
+  // 3. تحليل الفريق الأفضل
+  if (teamsData && teamsData.labels && teamsData.labels.length > 0) {
+    const topTeam = teamsData.labels[0];
+    insights.push({ type: 'opportunity', text: `🏆 الفريق الأعلى مساهمة حالياً: ${topTeam}` });
+  }
+
+  // 4. تحليل المبيعات الإجمالي
+  if (kpis.totalValue > 0) {
+    insights.push({ type: 'strength', text: `💰 تم رصد تدفق مبيعات إجمالي بقيمة ${formatNum(kpis.totalValue)} د.أ` });
+  }
+
+  return insights;
+}
