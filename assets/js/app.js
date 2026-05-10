@@ -362,3 +362,19 @@ function esc(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+// دالة لتحديث الفلاتر بناءً على البيانات المختارة حالياً
+function updateSmartFilters(data) {
+    const currentFilters = {
+        team: document.getElementById('filterTeam').value,
+        area: document.getElementById('filterArea').value,
+        // ... بقية الفلاتر
+    };
+
+    // 1. استخراج الخيارات المتاحة بناءً على ما هو مفلتر حالياً
+    const availableOptions = extractFilterOptions(data);
+
+    // 2. تحديث قائمة "المندوب" مثلاً لتظهر فقط مناديب الفريق المختار
+    populateSelect('filterRep', availableOptions.reps, currentFilters.rep);
+    populateSelect('filterArea', availableOptions.areas, currentFilters.area);
+    // وهكذا للبقية...
+}
